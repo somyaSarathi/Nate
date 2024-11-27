@@ -1,4 +1,4 @@
-#!filepath providers/openai.py
+#!filepath providers/openai_provider.py
 import logging
 from typing import List, Dict, Any, Optional
 import sys
@@ -7,18 +7,19 @@ import os
 # Add the project root directory to Python path
 sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
-import openai
+from openai import OpenAI
 from config.settings import settings
 from providers.base import BaseProvider, Message, ModelResponse
 
 logger = logging.getLogger(__name__)
+
 
 class OpenAIProvider(BaseProvider):
     """OpenAI API provider implementation."""
     
     def __init__(self) -> None:
         """Initialize OpenAI client with API key from settings."""
-        openai.api_key = settings.OPENAI_API_KEY
+        self.client = OpenAI(api_key=settings.OPENAI_API_KEY)
         self.available_models = settings.OPENAI_AVAILABLE_MODELS
         self.default_model = settings.OPENAI_DEFAULT_MODEL
         self.max_tokens = settings.OPENAI_MAX_TOKENS
@@ -51,7 +52,7 @@ class OpenAIProvider(BaseProvider):
                 {"role": msg.role, "content": msg.content} for msg in messages
             ]
 
-            response = await openai.ChatCompletion.create(
+            response = self.client.chat.completions.create(
                 model=model or self.default_model,
                 messages=formatted_messages,
                 temperature=temperature or self.temperature,
@@ -62,7 +63,7 @@ class OpenAIProvider(BaseProvider):
                 raise ValueError("No response generated from OpenAI")
 
             first_choice = response.choices[0]
-            
+
             return ModelResponse(
                 content=first_choice.message.content,
                 model=response.model,
@@ -74,11 +75,8 @@ class OpenAIProvider(BaseProvider):
                 finish_reason=first_choice.finish_reason
             )
 
-        except openai.error.OpenAIError as e:
-            logger.error(f"OpenAI API Error: {str(e)}")
-            raise
         except Exception as e:
-            logger.error(f"Unexpected error in OpenAI provider: {str(e)}")
+            logger.error(f"OpenAI API Error: {str(e)}")
             raise
 
     async def validate_model(self, model: str) -> bool:
@@ -102,16 +100,18 @@ class OpenAIProvider(BaseProvider):
         """
         return self.available_models
 
+
 if __name__ == "__main__":
     import asyncio
-    
+
     async def test_openai_provider():
+        """Test OpenAIProvider class."""
         provider = OpenAIProvider()
         messages = [
             Message(role="system", content="You are a helpful assistant."),
             Message(role="user", content="Write a short greeting!")
         ]
-        
+
         try:
             response = await provider.generate_response(messages)
             print(f"Response: {response.content}")

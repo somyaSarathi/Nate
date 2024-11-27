@@ -1,7 +1,3 @@
-"""
-Application settings module.
-"""
-
 import logging
 from typing import List, Optional
 
@@ -9,9 +5,7 @@ from pydantic import BaseSettings, validator
 
 
 class Settings(BaseSettings):
-    """
-    Application settings class.
-    """
+    """Settings class for the application."""
     # Discord Bot Settings
     DISCORD_TOKEN: str
     DISCORD_GUILD_ID: Optional[str] = None
@@ -31,9 +25,7 @@ class Settings(BaseSettings):
 
     @validator("LOG_LEVEL")
     def validate_log_level(self, v: str) -> str:
-        """
-        Validate log level.
-        """
+        """Validate log level."""
         levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in levels:
             raise ValueError(f"Log level must be one of {levels}")
@@ -41,45 +33,34 @@ class Settings(BaseSettings):
 
     @validator("DISCORD_GUILD_ID")
     def validate_guild_id(self, v: Optional[str]) -> Optional[int]:
-        """
-        Validate Discord guild ID.
-        """
+        """Validate guild ID."""
         if v is None:
             return None
         try:
             return int(v)
-        except ValueError as exc:
-            raise ValueError(
-                "DISCORD_GUILD_ID must be a valid integer if provided"
-            ) from exc
+        except ValueError:
+            raise ValueError("DISCORD_GUILD_ID must be a valid integer if provided")
 
     class Config:
-        """
-        Pydantic config class.
-        """
+        """Configuration for pydantic."""
         case_sensitive = True
         env_file = ".env"
         env_file_encoding = "utf-8"
 
-
 def get_settings() -> Settings:
-    """
-    Get application settings.
+    """Get application settings.
 
     Returns:
         Settings: Application settings instance
-
+    
     Raises:
-        pydantic.error_wrappers.ValidationError: If environment variables
-            are invalid.
+        pydantic.error_wrappers.ValidationError: If environment variables are invalid
     """
     return Settings()
 
-
 # Configure logging
 def setup_logging(level: str = "INFO") -> None:
-    """
-    Setup application logging.
+    """Setup application logging.
 
     Args:
         level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
@@ -89,7 +70,6 @@ def setup_logging(level: str = "INFO") -> None:
         format="%(asctime)s - %(name)s - %(levelname)s - %(message)s",
         datefmt="%Y-%m-%d %H:%M:%S",
     )
-
 
 # Create settings instance
 settings = get_settings()
