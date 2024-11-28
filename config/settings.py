@@ -1,11 +1,10 @@
+import os
 import logging
-from typing import List, Optional
+from typing import Dict, List, Optional
 
 from pydantic import BaseSettings, validator
 
-
 class Settings(BaseSettings):
-    """Settings class for the application."""
     # Discord Bot Settings
     DISCORD_TOKEN: str
     DISCORD_GUILD_ID: Optional[str] = None
@@ -20,20 +19,20 @@ class Settings(BaseSettings):
     OPENAI_TEMPERATURE: float = 0.7
 
     # MongoDB Settings
-    MONGODB_URI: str
+    MONGODB_USERNAME: str
+    MONGODB_PASSWORD: str
+    MONGODB_CLUSTER: str
     MONGODB_DB_NAME: str
 
     @validator("LOG_LEVEL")
-    def validate_log_level(self, v: str) -> str:
-        """Validate log level."""
+    def validate_log_level(cls, v: str) -> str:
         levels = ["DEBUG", "INFO", "WARNING", "ERROR", "CRITICAL"]
         if v.upper() not in levels:
             raise ValueError(f"Log level must be one of {levels}")
         return v.upper()
 
     @validator("DISCORD_GUILD_ID")
-    def validate_guild_id(self, v: Optional[str]) -> Optional[int]:
-        """Validate guild ID."""
+    def validate_guild_id(cls, v: Optional[str]) -> Optional[int]:
         if v is None:
             return None
         try:
@@ -42,13 +41,13 @@ class Settings(BaseSettings):
             raise ValueError("DISCORD_GUILD_ID must be a valid integer if provided")
 
     class Config:
-        """Configuration for pydantic."""
         case_sensitive = True
         env_file = ".env"
         env_file_encoding = "utf-8"
 
 def get_settings() -> Settings:
-    """Get application settings.
+    """
+    Get application settings.
 
     Returns:
         Settings: Application settings instance
@@ -60,7 +59,8 @@ def get_settings() -> Settings:
 
 # Configure logging
 def setup_logging(level: str = "INFO") -> None:
-    """Setup application logging.
+    """
+    Setup application logging.
 
     Args:
         level (str): Logging level (DEBUG, INFO, WARNING, ERROR, CRITICAL)
